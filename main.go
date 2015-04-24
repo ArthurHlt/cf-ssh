@@ -9,8 +9,9 @@ import (
 	"path/filepath"
 	"regexp"
 	"time"
+	"net/url"
 
-	"github.com/cloudfoundry-community/cf-ssh/cfmanifest"
+	"github.com/ArthurHlt/cf-ssh/cfmanifest"
 	"github.com/codegangsta/cli"
 )
 
@@ -18,12 +19,13 @@ func cmdSSH(c *cli.Context) {
 	// TODO: confirm that `cf` and `ssh` are in path
 	// TODO: Windows: cf.exe and ssh.exe?
 	manifestPath, err := filepath.Abs(c.String("manifest"))
+	bootStrapUrl, err := url.Parse(c.String("bootstrap-url"))
 	if err != nil {
 		log.Fatal(err)
 	}
 	var manifest *cfmanifest.Manifest
 	if _, err := os.Stat(manifestPath); os.IsNotExist(err) {
-		log.Fatal("USAGE: cf-ssh -f manifest.yml")
+		log.Fatal("USAGE: cf-ssh -f manifest.yml [-u http://tmate-bootstrap.cfapps.io]")
 
 		// appName := c.Args().First()
 		//
@@ -32,7 +34,7 @@ func cmdSSH(c *cli.Context) {
 		// }
 		// manifest = cfmanifest.NewSSHManifest(appName)
 	} else {
-		manifest, err = cfmanifest.NewSSHManifestFromManifestPath(manifestPath)
+		manifest, err = cfmanifest.NewSSHManifestFromManifestPath(manifestPath, bootStrapUrl.String())
 		if err != nil {
 			log.Fatalf("Manifest %s exists but failed to load: %s", manifestPath, err)
 		}
@@ -78,7 +80,7 @@ func cmdSSH(c *cli.Context) {
 		}
 		sshHostMatches := sshHostLine.FindAllStringSubmatch(logs, -1)
 		if sshHostMatches != nil {
-			sshHostMatch := sshHostMatches[len(sshHostMatches)-1]
+			sshHostMatch := sshHostMatches[len(sshHostMatches) - 1]
 			sshUser = sshHostMatch[1]
 			sshHost = sshHostMatch[2]
 			break
@@ -112,6 +114,11 @@ func main() {
 			Name:  "manifest, f",
 			Value: "manifest.yml",
 			Usage: "Path to application manifest",
+		},
+		cli.StringFlag{
+			Name:  "bootstrap-url, u",
+			Value: "http://tmate-bootstrap.cfapps.io",
+			Usage: "Url to tmate bootstrap",
 		},
 	}
 

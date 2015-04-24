@@ -4,7 +4,7 @@ import (
 	"io/ioutil"
 	"os"
 
-	"launchpad.net/goyaml"
+	"gopkg.in/yaml.v2"
 )
 
 // Manifest models a manifest.yml
@@ -27,7 +27,7 @@ func NewManifestFromPath(manifestPath string) (manifest *Manifest, err error) {
 	if err != nil {
 		return
 	}
-	err = goyaml.Unmarshal(yml, manifest)
+	err = yaml.Unmarshal(yml, manifest)
 	return
 }
 
@@ -70,10 +70,11 @@ func (manifest Manifest) RemoveAllButFirstApplication() {
 
 // Save the Manifest to a file in YAML format
 func (manifest Manifest) Save(path string) (err error) {
-	data, err := goyaml.Marshal(manifest)
+	data, err := yaml.Marshal(manifest)
 	if err != nil {
 		return
 	}
-	ioutil.WriteFile(path, data, 0644)
+	var perm os.FileMode = 644
+	ioutil.WriteFile(path, data, perm)
 	return
 }
